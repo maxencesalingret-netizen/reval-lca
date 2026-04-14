@@ -1,0 +1,13 @@
+{
+  "background_color": "#1a1a2e",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Reval LCA",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Reval LCA",
+  "start_url": "/",
+  "theme_color": "#f4efe6",
+  "description": "Suivi revalidation LCA et ménisque",
+  "lang": "fr"
+}
