@@ -1,13 +1,28 @@
 {
-  "background_color": "#1a1a2e",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "Reval LCA",
-  "orientation": "any",
-  "scope": "/",
+  "name": "Reval LCA · Ménisque",
   "short_name": "Reval LCA",
-  "start_url": "/",
-  "theme_color": "#f4efe6",
-  "description": "Suivi revalidation LCA et ménisque",
-  "lang": "fr"
+  "description": "Suivi de revalidation LCA et ménisque - Planning, douleurs, bilans hebdomadaires",
+  "start_url": "/reval-lca/",
+  "scope": "/reval-lca/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4efe6",
+  "theme_color": "#1a1a2e",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/maxencesalingret-netizen/reval-lca/main/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/maxencesalingret-netizen/reval-lca/main/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical", "fitness"],
+  "screenshots": []
 }
