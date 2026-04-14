@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reval LCA</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,sans-serif;background:#f4efe6;color:#1a1a2e;padding-top:52px;padding-bottom:72px}
+#topbar{position:fixed;top:0;left:0;right:0;z-index:9;background:#1a1a2e;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between}
+#topbar h1{color:#fff;font-size:.92rem;font-weight:600}
+#topbar small{color:rgba(255,255,255,.45);font-size:.58rem;display:block}
+.tpill{border-radius:99px;padding:.18rem .6rem;font-size:.6rem;font-weight:700}
+#nav{position:fixed;bottom:0;left:0;right:0;z-index:9;background:#fdfaf4;border-top:1px solid #d4c9b0;display:flex}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;padding:.45rem .1rem .32rem;cursor:pointer;border:none;background:none;font-family:inherit;font-size:.53rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em;gap:2px}
+.nb.on{color:#1a1a2e}
+.nb .ic{font-size:1.2rem;line-height:1}
+.nb .dot{width:4px;height:4px;border-radius:50%;background:#2d6a4f;opacity:0}
+.nb.on .dot{opacity:1}
+.pg{display:none;max-width:600px;margin:0 auto;padding:1rem}
+.pg.on{display:block}
+.card{background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;padding:1rem;margin-bottom:.75rem}
+.sl{font-size:.57rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#9ca3af;margin-bottom:.55rem;padding-bottom:.28rem;border-bottom:1px solid #e8e0d0;margin-top:.75rem}
+.sl:first-child{margin-top:0}
+.btn{padding:.48rem 1rem;border-radius:8px;border:none;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer}
+.btn-dark{background:#1a1a2e;color:#fff}
+.btn-ghost{background:#fdfaf4;color:#6b7280;border:1px solid #d4c9b0}
+.btn-green{background:#2d6a4f;color:#fff}
+.btn-purple{background:#7c3aed;color:#fff}
+.btn-red{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a2e;color:#fff;padding:.48rem 1.1rem;border-radius:999px;font-size:.72rem;font-weight:500;opacity:0;transition:all .3s;z-index:99;white-space:nowrap;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* HOME */
+.hero{background:linear-gradient(135deg,#1a1a2e,#2d6a4f);border-radius:12px;padding:1.2rem;color:#fff;margin-bottom:.85rem}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.85rem}
+.stat{background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;padding:.75rem}
+.stat .lbl{font-size:.54rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9ca3af}
+.stat .val{font-size:1.5rem;font-weight:700;line-height:1.1;margin:.1rem 0 .03rem}
+.stat .sub{font-size:.58rem;color:#9ca3af}
+.qa{display:flex;align-items:center;gap:.85rem;background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;padding:.82rem 1rem;cursor:pointer;margin-bottom:.45rem;border:none;width:100%;font-family:inherit;text-align:left}
+.qa:active{background:#ede8dc}
+.qa .ic{font-size:1.25rem}
+.qa strong{font-size:.83rem;display:block}
+.qa small{font-size:.65rem;color:#9ca3af}
+.qa .ar{margin-left:auto;color:#9ca3af;font-size:1rem}
+
+/* PLANNING */
+.wknav{display:flex;align-items:center;background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;overflow:hidden;margin-bottom:.82rem}
+.wknav button{background:none;border:none;padding:.6rem .85rem;cursor:pointer;font-size:1.1rem;color:#9ca3af}
+.wknav .lbl{flex:1;text-align:center;font-size:.77rem;font-weight:600}
+.wknav .sub{font-size:.57rem;color:#9ca3af;font-weight:400;display:block}
+.phpill{display:inline-flex;align-items:center;gap:.38rem;padding:.27rem .7rem;border-radius:999px;font-size:.67rem;font-weight:600;margin-bottom:.82rem}
+.daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:.26rem;margin-bottom:.82rem}
+.day{background:#fdfaf4;border:1.5px solid #d4c9b0;border-radius:8px;padding:.45rem .08rem .37rem;display:flex;flex-direction:column;align-items:center;gap:.24rem;cursor:pointer;user-select:none}
+.day:active{opacity:.7}
+.day.today{border-color:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.12)}
+.day.done{border-color:#2d6a4f;background:color-mix(in srgb,#2d6a4f 6%,white)}
+.day.dis{opacity:.32;pointer-events:none}
+.day.sun{border-top:3px solid #457b9d}
+.day .dn{font-size:.46rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#9ca3af}
+.day .dd{font-size:.67rem;font-weight:600}
+.day .ck{width:15px;height:15px;border:2px solid #d4c9b0;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:transparent;transition:all .2s}
+.day.done .ck{background:#2d6a4f;border-color:#2d6a4f;color:#fff}
+.day .pdot{width:5px;height:5px;border-radius:50%;background:#e07a5f;opacity:0}
+.day.hasnote .pdot{opacity:1}
+.day .slbl{font-size:.42rem;font-weight:700;text-transform:uppercase;color:#457b9d;letter-spacing:.04em}
+.day .oplbl{font-size:.44rem;font-weight:700;color:#fff;background:#e07a5f;border-radius:3px;padding:1px 3px}
+
+/* DAY PANEL */
+.dpanel{background:#fdfaf4;border:1.5px solid #d4c9b0;border-radius:12px;padding:1rem;margin-bottom:.82rem}
+.dpanel h3{font-size:.9rem;font-weight:700;margin-bottom:.8rem}
+.dtoggle{display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:8px;cursor:pointer;margin-bottom:.72rem;border:1px solid #d4c9b0;background:#f9f7f2;transition:all .15s}
+.dtoggle.on{background:color-mix(in srgb,#2d6a4f 8%,white);border-color:color-mix(in srgb,#2d6a4f 30%,white)}
+.dtoggle .box{width:20px;height:20px;border:2px solid #d4c9b0;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:transparent;transition:all .2s;flex-shrink:0}
+.dtoggle.on .box{background:#2d6a4f;border-color:#2d6a4f;color:#fff}
+.zones{display:flex;flex-wrap:wrap;gap:.28rem;margin-bottom:.7rem}
+.zone{font-size:.68rem;padding:.2rem .58rem;border-radius:999px;border:1px solid #d4c9b0;background:#f4efe6;cursor:pointer;user-select:none;transition:all .12s}
+.zone.on{background:color-mix(in srgb,#e07a5f 15%,white);border-color:#e07a5f;color:#e07a5f}
+textarea{width:100%;border:1.5px solid #d4c9b0;border-radius:8px;padding:.52rem .68rem;font-family:inherit;font-size:.8rem;color:#1a1a2e;background:#f4efe6;resize:vertical;min-height:58px;line-height:1.5;outline:none}
+textarea:focus{border-color:#2d6a4f}
+.row{display:flex;gap:.42rem;margin-top:.58rem;flex-wrap:wrap}
+
+/* SUNDAY */
+.sunday{background:#fdfaf4;border:2px solid #457b9d;border-radius:12px;padding:1rem;margin-bottom:.82rem}
+.sunday h2{font-size:.97rem;font-weight:700;color:#457b9d;margin-bottom:.8rem}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:.58rem;margin-bottom:.7rem}
+.sf .lbl{font-size:.56rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#9ca3af;display:block;margin-bottom:3px}
+.sf .dots{display:flex;gap:2px}
+.sf .val{font-size:.68rem;font-weight:700;text-align:right;margin-top:1px}
+.sf .hints{display:flex;justify-content:space-between;font-size:.52rem;color:#9ca3af;margin-top:1px}
+.sdot{flex:1;height:7px;border-radius:999px;background:#e0dbd0;border:none;cursor:pointer;min-width:0}
+.sdot:active{opacity:.7}
+.synthbox{background:#f9f7f2;border:1px solid #e8e0d0;border-radius:8px;padding:.72rem;margin-bottom:.7rem}
+.synthbox .t{font-size:.53rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-bottom:.38rem}
+.phreq{background:color-mix(in srgb,#457b9d 7%,white);border:1px solid color-mix(in srgb,#457b9d 22%,white);border-radius:8px;padding:.7rem;margin-bottom:.62rem;display:flex;align-items:center;justify-content:space-between;gap:.7rem}
+.tgl{position:relative;width:38px;height:21px;flex-shrink:0;cursor:pointer}
+.tgl .tr{position:absolute;inset:0;background:#ddd;border-radius:21px;transition:.25s}
+.tgl.on .tr{background:#457b9d}
+.tgl .th{position:absolute;width:15px;height:15px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s}
+.tgl.on .th{left:20px}
+.kinebox{border-radius:8px;padding:.72rem;margin-top:.62rem}
+.kinebox.pending{background:color-mix(in srgb,#f59e0b 10%,white);border:1px solid color-mix(in srgb,#f59e0b 30%,white)}
+.kinebox.approved{background:color-mix(in srgb,#2d6a4f 8%,white);border:1px solid color-mix(in srgb,#2d6a4f 25%,white)}
+.kinebox.rejected{background:color-mix(in srgb,#e07a5f 8%,white);border:1px solid color-mix(in srgb,#e07a5f 25%,white)}
+.kinebox .klbl{font-size:.54rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.42rem}
+.kbtns{display:flex;gap:.35rem;margin-top:.42rem;flex-wrap:wrap}
+.kapprove{background:#2d6a4f;color:#fff;border:none;padding:.36rem .8rem;border-radius:6px;font-family:inherit;font-size:.7rem;font-weight:600;cursor:pointer;flex:1}
+.kreject{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;padding:.36rem .8rem;border-radius:6px;font-family:inherit;font-size:.7rem;font-weight:600;cursor:pointer}
+
+/* CHART */
+.chartwrap{background:#f9f7f2;border:1px solid #e8e0d0;border-radius:8px;padding:.65rem .58rem .48rem;margin-bottom:.7rem}
+.chartleg{display:flex;flex-wrap:wrap;gap:.36rem;margin-top:.3rem}
+.chartleg span{display:inline-flex;align-items:center;gap:3px;font-size:.57rem;color:#9ca3af}
+.chartleg i{width:11px;height:3px;border-radius:2px;display:inline-block}
+
+/* PROTOCOL */
+.phblock{background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;overflow:hidden;margin-bottom:.78rem}
+.phhead{display:flex;align-items:center;gap:.7rem;padding:.83rem .97rem;cursor:pointer;user-select:none}
+.phnum{width:35px;height:35px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.92rem;font-weight:700;color:#fff;flex-shrink:0}
+.phbody{display:none;padding:.95rem;border-top:1px solid #e8e0d0}
+.phbody.open{display:block}
+.obj{background:#f9f7f2;border:1px solid #e8e0d0;border-radius:8px;padding:.67rem .82rem;margin-bottom:.42rem}
+.obj.done{border-color:#2d6a4f;background:color-mix(in srgb,#2d6a4f 5%,white)}
+.objtop{display:flex;align-items:center;gap:.55rem;margin-bottom:.42rem}
+.ocheck{width:17px;height:17px;border:2px solid #d4c9b0;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;font-weight:700;color:transparent;transition:all .2s}
+.obj.done .ocheck{background:#2d6a4f;border-color:#2d6a4f;color:#fff}
+.olbl{flex:1;font-size:.8rem;font-weight:500;line-height:1.3}
+.obj.done .olbl{text-decoration:line-through;color:#9ca3af}
+.osv{font-size:.68rem;font-weight:700;min-width:24px;text-align:right}
+.scorerow{display:flex;align-items:center;gap:.36rem}
+.hint{font-size:.52rem;color:#9ca3af;white-space:nowrap}
+.sdots{display:flex;gap:2px;flex:1}
+.exgrid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin:.65rem 0}
+.excard{background:#f9f7f2;border:1px solid #e8e0d0;border-radius:8px;padding:.67rem .75rem}
+.excard .t{font-size:.54rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#9ca3af;margin-bottom:.4rem}
+.excard ul{list-style:none;display:flex;flex-direction:column;gap:.27rem}
+.excard li{font-size:.77rem;display:flex;gap:.3rem}
+.excard li::before{content:'→';color:#b5838d;flex-shrink:0;font-size:.72rem}
+.tags{display:flex;flex-wrap:wrap;gap:.27rem;margin-top:.6rem}
+.tag{font-size:.6rem;font-weight:600;padding:.16rem .48rem;border-radius:999px}
+
+/* JOURNAL */
+.jcard{background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;padding:1rem;margin-bottom:.78rem}
+.jcard h3{font-size:.78rem;font-weight:600;margin-bottom:.7rem}
+.barchart{display:flex;align-items:flex-end;gap:3px;height:85px;margin-bottom:3px}
+.bgrp{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
+.binner{display:flex;gap:2px;align-items:flex-end;width:100%}
+.bar{flex:1;border-radius:2px 2px 0 0;min-height:2px}
+.blbl{font-size:.5rem;color:#9ca3af}
+.wkcard{background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;margin-bottom:.7rem;overflow:hidden}
+.wkhead{display:flex;align-items:center;justify-content:space-between;padding:.8rem .97rem;background:#f9f7f2;cursor:pointer}
+.wkbody{display:none;padding:.97rem}
+.wkbody.open{display:block}
+.msgrid{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.7rem}
+.ms .lbl{font-size:.54rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#9ca3af}
+.ms .brow{display:flex;align-items:center;gap:4px}
+.ms .trk{flex:1;height:5px;background:#e0dbd0;border-radius:999px;overflow:hidden}
+.ms .fill{height:100%;border-radius:999px}
+.ms .val{font-size:.68rem;font-weight:700;min-width:25px;text-align:right}
+.avgpill{font-size:.68rem;font-weight:700;padding:.14rem .48rem;border-radius:999px;color:#fff}
+
+/* KINE */
+.shero{background:linear-gradient(135deg,#7c3aed,#4338ca);border-radius:12px;padding:1.12rem;color:#fff;margin-bottom:1rem}
+.syncbar{display:flex;align-items:center;gap:.55rem;padding:.58rem .8rem;border-radius:8px;font-size:.72rem;font-weight:500;margin-bottom:.97rem}
+.syncbar .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.codebox{background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;padding:.97rem;margin-bottom:.97rem}
+.codeval{font-family:monospace;font-size:.97rem;font-weight:700;letter-spacing:.1em;color:#7c3aed;background:#f5f0ff;padding:.45rem .75rem;border-radius:6px;text-align:center;border:1px solid #e9d5ff;margin:.4rem 0 .65rem;word-break:break-all}
+.fbbox{background:#fdfaf4;border:1px solid #d4c9b0;border-radius:10px;padding:.97rem;margin-bottom:.97rem}
+.fbbox h3{font-size:.85rem;font-weight:700;margin-bottom:.55rem}
+.steps{list-style:none;display:flex;flex-direction:column;gap:.4rem;margin-bottom:.72rem}
+.steps li{display:flex;align-items:flex-start;gap:.5rem;font-size:.72rem;line-height:1.5}
+.stepn{width:17px;height:17px;border-radius:50%;background:#7c3aed;color:#fff;font-size:.54rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.fbcfg{width:100%;border:1.5px solid #d4c9b0;border-radius:8px;padding:.53rem .68rem;font-family:monospace;font-size:.67rem;color:#1a1a2e;background:#f4efe6;resize:vertical;min-height:95px;line-height:1.5;outline:none;margin-bottom:.58rem}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div><h1>Reval LCA · Ménisque</h1><small>🗓 Opération : mardi 21 avril 2026</small></div>
+  <div style="display:flex;gap:.3rem">
+    <span class="tpill" id="tW" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.8)">—</span>
+    <span class="tpill" id="tP" style="background:rgba(45,106,79,.4);color:#a8e6c8">—</span>
+  </div>
+</div>
+
+<div class="pg on" id="pg-home"></div>
+<div class="pg" id="pg-planning"></div>
+<div class="pg" id="pg-protocol"></div>
+<div class="pg" id="pg-journal"></div>
+<div class="pg" id="pg-kine"></div>
+
+<div id="nav">
+  <button class="nb on" id="nb-home"    onclick="go('home')">   <div class="ic">🏠</div>Accueil <div class="dot"></div></button>
+  <button class="nb"    id="nb-planning" onclick="go('planning')"><div class="ic">📅</div>Planning<div class="dot"></div></button>
+  <button class="nb"    id="nb-protocol" onclick="go('protocol')"><div class="ic">📋</div>Protocole<div class="dot"></div></button>
+  <button class="nb"    id="nb-journal"  onclick="go('journal')"> <div class="ic">📊</div>Journal <div class="dot"></div></button>
+  <button class="nb"    id="nb-kine"     onclick="go('kine')">    <div class="ic">🔗</div>Kiné    <div class="dot"></div></button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══ CONSTANTS ═══ */
+const OP  = new Date(2026,3,21);
+const W1  = new Date(2026,3,20); // lundi 20 avril
+const PH  = [{l:'Phase I — Aiguë',s:'Ph I',c:'#2d6a4f',mw:4},
+             {l:'Phase II — Fonctionnelle',s:'Ph II',c:'#457b9d',mw:13},
+             {l:'Phase III — Retour sport',s:'Ph III',c:'#e07a5f',mw:999}];
+const PO  = [['c1a','c1b','c1c'],['c2a','c2b','c2c','c2d','c2e'],['t1','t2','t3','t4','t5','t6']];
+const OSH = {c1a:'Œdème',c1b:'Amplitudes',c1c:'Quadriceps',c2a:'Extension',c2b:'Flex 125°',c2c:'Œdème nul',c2d:'Unipodal',c2e:'Pont fessier',t1:'Single Hop',t2:'Triple Hop',t3:'Crossover',t4:'Side Hop',t5:'SL Squat',t6:'Y-Balance'};
+const OLB = {c1a:'↓ Œdème & douleur',c1b:'Amplitudes 0°→110°',c1c:'Contractions quadriceps (VMO)',c2a:'Extension complète : 0°',c2b:'Flexion 125°',c2c:'Œdème résiduel nul',c2d:'Tenu sur 1 jambe stable',c2e:'Pont fessier 1 jambe',t1:'Single Hop',t2:'Triple Hop',t3:'Triple Crossover',t4:'Side Hop',t5:'Single Leg Squat',t6:'Y-Balance Test'};
+const OC  = {c1a:'#2d6a4f',c1b:'#457b9d',c1c:'#b5838d',c2a:'#e07a5f',c2b:'#f4a261',c2c:'#9b72cf',c2d:'#6d8b74',c2e:'#c9a84c',t1:'#2d6a4f',t2:'#457b9d',t3:'#b5838d',t4:'#e07a5f',t5:'#f4a261',t6:'#9b72cf'};
+const OID = ['c1a','c1b','c1c','c2a','c2b','c2c','c2d','c2e','t1','t2','t3','t4','t5','t6'];
+const WF  = ['douleur','mobilite','energie','humeur','sommeil','effort'];
+const WL  = {douleur:'🩹 Douleur',mobilite:'🦵 Mobilité',energie:'⚡ Énergie',humeur:'😊 Humeur',sommeil:'💤 Sommeil',effort:'🏃 Effort'};
+const WH  = {douleur:['Intense','Absente'],mobilite:['Limitée','Top'],energie:['Épuisé','Plein'],humeur:['Bas','Super'],sommeil:['Mauvais','Super'],effort:['Dur','Facile']};
+const WCS = {douleur:'#e07a5f',mobilite:'#457b9d',energie:'#f4a261',humeur:'#b5838d',sommeil:'#6d8b74',effort:'#9b72cf'};
+const ZN  = ['Genou int.','Genou ext.','Rotule','Cuisse ant.','Cuisse post.','Mollet','Hanche','Cicatrice'];
+const DN  = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+/* ═══ STORAGE ═══ */
+const K = 'lca_';
+function ls(k,d){try{const v=localStorage.getItem(K+k);return v?JSON.parse(v):d;}catch{return d;}}
+function ss(k,v){try{localStorage.setItem(K+k,JSON.stringify(v));}catch{}}
+function gD(key){return ls('d_'+key,{done:false,zones:[],note:''});}
+function sD(key,v){ss('d_'+key,v);}
+function gW(n){return ls('w_'+n,{scores:{},ob:{},ready:false,kine:null});}
+function sW(n,v){ss('w_'+n,v);}
+
+/* ═══ DATE HELPERS ═══ */
+function dk(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function aD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function tod(){const t=new Date();t.setHours(0,0,0,0);return t;}
+function cws(){const t=tod(),ms=t-W1;return ms<0?W1:aD(W1,Math.floor(ms/86400000/7)*7);}
+function wS(o){return aD(cws(),o*7);}
+function wN(o){const s=wS(o),ms=s-W1;return ms<0?null:Math.floor(ms/604800000)+1;}
+function phOf(n){return!n?PH[0]:n<=4?PH[0]:n<=13?PH[1]:PH[2];}
+function scC(v){return!v?'#e0dbd0':v<=2?'#e07a5f':v<=4?'#e8a87c':v<=6?'#e8c96b':v<=8?'#a8c88b':'#2d6a4f';}
+function wAvg(wd){const vs=WF.map(f=>wd.scores?.[f]||0).filter(v=>v>0);return vs.length?(vs.reduce((a,b)=>a+b)/vs.length).toFixed(1):null;}
+
+/* ═══ PATIENT ID ═══ */
+let PID=ls('pid',null);
+if(!PID){PID=([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)).replace(/-/g,'').slice(0,16);ss('pid',PID);}
+
+/* ═══ APP STATE ═══ */
+let page='home',wkO=0,openD=null;
+let obS=ls('obS',{}),obD=ls('obD',{});
+let opPh={p1:true,p2:false,p3:false};
+let fbDb=null,fbSt='off';
+
+/* ═══ TOAST ═══ */
+let toastTm;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(toastTm);toastTm=setTimeout(()=>el.classList.remove('show'),2400);}
+
+/* ═══ SCORE DOTS ═══ */
+function mkDots(wrap,val,cb,h){
+  h=h||7;wrap.innerHTML='';
+  for(let v=1;v<=10;v++){
+    const b=document.createElement('button');
+    b.className='sdot';b.style.height=h+'px';
+    b.style.background=val>=v?dotC(v):'#e0dbd0';
+    b.onclick=()=>cb(v);
+    wrap.appendChild(b);
+  }
+}
+function dotC(v){return v<=2?'#e07a5f':v<=4?'#e8a87c':v<=6?'#e8c96b':v<=8?'#a8c88b':'#2d6a4f';}
+function rfDots(wrap,val){wrap.querySelectorAll('.sdot').forEach((b,i)=>{b.style.background=val>=i+1?dotC(i+1):'#e0dbd0';});}
+
+/* ═══ NAVIGATE ═══ */
+function go(p){
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
+  document.getElementById('pg-'+p).classList.add('on');
+  document.getElementById('nb-'+p).classList.add('on');
+  page=p;openD=null;window.scrollTo(0,0);
+  if(p==='home')rHome();
+  if(p==='planning')rPlan();
+  if(p==='protocol')rProt();
+  if(p==='journal')rJour();
+  if(p==='kine')rKine();
+  upTop();
+}
+function upTop(){
+  const n=wN(wkO),ph=phOf(n);
+  document.getElementById('tW').textContent=n?'S'+n:'—';
+  document.getElementById('tP').textContent=ph.s;
+}
+
+/* ═══ HOME ═══ */
+function rHome(){
+  const t=tod(),n=wN(0),WS=wS(0),ph=phOf(n);
+  const pi=PH.indexOf(ph),ps=pi===0?1:pi===1?5:14,pe=ph.mw===999?26:ph.mw;
+  const pct=n?Math.min(100,Math.round(((n-ps)/(pe-ps+1))*100)):0;
+  let dd=0;for(let i=0;i<7;i++){const d=aD(WS,i);if(d<=t&&d>=OP&&gD(dk(d)).done)dd++;}
+  const cw=Array.from({length:52},(_,i)=>gW(i+1)).filter(w=>WF.some(f=>w.scores?.[f]>0)).length;
+  const avg=wAvg(gW(n));
+  document.getElementById('pg-home').innerHTML=`
+    <div class="hero">
+      <div style="font-size:.57rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.48);margin-bottom:.28rem">${n?'Semaine '+n+' post-opération':'Avant l\'opération'}</div>
+      <div style="font-size:1.22rem;font-weight:700;margin-bottom:.13rem">${ph.l}</div>
+      <div style="font-size:.67rem;color:rgba(255,255,255,.62);margin-bottom:.8rem">${t<OP?'Opération dans '+Math.ceil((OP-t)/86400000)+' jours':WS.toLocaleDateString('fr-BE',{day:'numeric',month:'short'})+' → '+aD(WS,6).toLocaleDateString('fr-BE',{day:'numeric',month:'short'})}</div>
+      <div style="display:flex;justify-content:space-between;font-size:.57rem;color:rgba(255,255,255,.48);margin-bottom:.28rem"><span>Progression ${ph.s}</span><span>${pct}%</span></div>
+      <div style="height:5px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#fff;border-radius:999px"></div></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="lbl">Jours exercices</div><div class="val">${dd}</div><div class="sub">cette semaine</div></div>
+      <div class="stat"><div class="lbl">Objectifs validés</div><div class="val">${OID.filter(id=>obD[id]).length}</div><div class="sub">sur 14</div></div>
+      <div class="stat"><div class="lbl">Semaines complètes</div><div class="val">${cw}</div><div class="sub">depuis l'op.</div></div>
+      <div class="stat"><div class="lbl">Dernier bilan</div><div class="val" style="font-size:1.15rem;color:${avg?scC(parseFloat(avg)):'inherit'}">${avg?avg+'/10':'—'}</div><div class="sub">moy. semaine</div></div>
+    </div>
+    <div class="sl">Accès rapide</div>
+    ${[{ic:'📅',t:'Planning de la semaine',s:'Cocher les jours · noter les douleurs',p:'planning'},
+       {ic:'📋',t:'Protocole kinésithérapeutique',s:'Objectifs par phase · scores 1-10',p:'protocol'},
+       {ic:'📊',t:'Journal & graphiques',s:'Bilans hebdomadaires · évolution',p:'journal'},
+       {ic:'🔗',t:'Partager avec la kiné',s:'Synchronisation temps réel',p:'kine'}]
+     .map(q=>`<button class="qa" onclick="go('${q.p}')"><div class="ic">${q.ic}</div><div><strong>${q.t}</strong><small>${q.s}</small></div><div class="ar">›</div></button>`).join('')}`;
+}
+
+/* ═══ PLANNING ═══ */
+function rPlan(){
+  const t=tod(),n=wN(wkO),WS=wS(wkO),WE=aD(WS,6),ph=phOf(n);
+  const pg=document.getElementById('pg-planning');
+  pg.innerHTML=`
+    <div class="wknav">
+      <button onclick="wkO--;rPlan()">‹</button>
+      <div class="lbl">${WS.toLocaleDateString('fr-BE',{day:'numeric',month:'short'})} – ${WE.toLocaleDateString('fr-BE',{day:'numeric',month:'short'})}<span class="sub">${n?'Semaine '+n+' post-op':'Avant opération'}</span></div>
+      <button onclick="wkO++;rPlan()">›</button>
+    </div>
+    <div class="phpill" style="background:${ph.c}20;color:${ph.c};border:1px solid ${ph.c}40">
+      <span style="width:7px;height:7px;border-radius:50%;background:${ph.c};display:inline-block"></span>${ph.l}
+    </div>
+    <div class="daygrid" id="dgrid"></div>
+    <div id="dpanel"></div>
+    ${n&&t>=WS?'<div id="sunday"></div>':''}`;
+  bGrid(t,n,WS);
+  if(n&&t>=WS)bSunday(n,WS);
+}
+
+function bGrid(t,n,WS){
+  const g=document.getElementById('dgrid');if(!g)return;g.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=aD(WS,i),ddk=dk(d),dd=gD(ddk);
+    const isT=d.getTime()===t.getTime(),isFu=d>t,isBe=d<OP,isOp=d.getTime()===OP.getTime(),isSu=i===6;
+    const dis=isFu||isBe;
+    const el=document.createElement('div');
+    let cls='day';if(isT)cls+=' today';if(dd.done&&!dis)cls+=' done';if(dis)cls+=' dis';if(isSu)cls+=' sun';if((dd.note||dd.zones?.length)&&!dis)cls+=' hasnote';
+    el.className=cls;
+    el.innerHTML=`<div class="dn">${DN[i]}</div><div class="dd">${d.getDate()}/${d.getMonth()+1}</div>`
+      +(isOp?'<div class="oplbl">🔪 Op.</div>':'<div class="ck">✓</div>')
+      +`<div class="pdot"></div>`+(isSu?'<div class="slbl">Bilan</div>':'');
+    if(!dis&&!isOp)el.onclick=()=>hDay(ddk,d,isSu,n);
+    g.appendChild(el);
+  }
+}
+
+function hDay(ddk,d,isSu,n){
+  if(isSu){document.getElementById('sunday')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(openD===ddk){openD=null;document.getElementById('dpanel').innerHTML='';return;}
+  openD=ddk;bPanel(ddk,d,n);
+  setTimeout(()=>document.getElementById('dpanel')?.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function bPanel(ddk,d,n){
+  const dd=gD(ddk);
+  const lbl=d.toLocaleDateString('fr-BE',{weekday:'long',day:'numeric',month:'long'});
+  const el=document.getElementById('dpanel');if(!el)return;
+  el.innerHTML=`
+    <div class="dpanel">
+      <h3>${lbl.charAt(0).toUpperCase()+lbl.slice(1)} <button onclick="openD=null;document.getElementById('dpanel').innerHTML=''" style="float:right;background:none;border:none;cursor:pointer;font-size:1rem;color:#9ca3af">✕</button></h3>
+      <div class="dtoggle${dd.done?' on':''}" id="dtog" onclick="togDone('${ddk}')">
+        <div class="box">✓</div><div>${dd.done?'Exercices réalisés aujourd\'hui ✓':'Marquer les exercices comme réalisés'}</div>
+      </div>
+      <div class="sl">Zones douloureuses</div>
+      <div class="zones">${ZN.map(z=>`<span class="zone${dd.zones?.includes(z)?' on':''}" onclick="togZone('${ddk}','${z}',this)">${z}</span>`).join('')}</div>
+      <div class="sl">Remarques du jour</div>
+      <textarea id="dnote" placeholder="Douleur en flexion, genou chaud après séance...">${dd.note||''}</textarea>
+      <div class="row">
+        <button class="btn btn-dark" onclick="saveNote('${ddk}')">Enregistrer</button>
+        <button class="btn btn-ghost" onclick="openD=null;document.getElementById('dpanel').innerHTML=''">Fermer</button>
+      </div>
+    </div>`;
+}
+
+function togDone(ddk){
+  const dd=gD(ddk);dd.done=!dd.done;sD(ddk,dd);
+  const el=document.getElementById('dtog');
+  if(el){el.classList.toggle('on',dd.done);el.querySelector('.box').style.cssText=dd.done?'background:#2d6a4f;border-color:#2d6a4f;color:#fff':'';el.lastChild.textContent=dd.done?'Exercices réalisés aujourd\'hui ✓':'Marquer les exercices comme réalisés';}
+  bGrid(tod(),wN(wkO),wS(wkO));
+  if(dd.done)toast('✅ Exercices enregistrés !');
+}
+function togZone(ddk,z,el){
+  const dd=gD(ddk);const zs=dd.zones||[];const on=zs.includes(z);
+  dd.zones=on?zs.filter(x=>x!==z):[...zs,z];sD(ddk,dd);
+  el.classList.toggle('on',!on);
+  bGrid(tod(),wN(wkO),wS(wkO));
+}
+function saveNote(ddk){
+  const dd=gD(ddk);dd.note=document.getElementById('dnote')?.value||'';sD(ddk,dd);
+  openD=null;document.getElementById('dpanel').innerHTML='';
+  bGrid(tod(),wN(wkO),wS(wkO));toast('💾 Remarques enregistrées');
+}
+
+/* ═══ SUNDAY REVIEW ═══ */
+function bSunday(n,WS){
+  const wd=gW(n),pi=PH.indexOf(phOf(n));
+  const synth=[];for(let i=0;i<7;i++){const d=aD(WS,i),dd=gD(dk(d)),lbl=d.toLocaleDateString('fr-BE',{weekday:'long',day:'numeric'});const ls=[];if(dd.done)ls.push('Exercices ✓');if(dd.zones?.length)ls.push('Zones : '+dd.zones.join(', '));if(dd.note?.trim())ls.push(dd.note.trim());if(ls.length)synth.push('▸ '+lbl.charAt(0).toUpperCase()+lbl.slice(1)+'\n'+ls.map(l=>'  '+l).join('\n'));}
+  const el=document.getElementById('sunday');if(!el)return;
+  el.innerHTML=`
+    <div class="sunday">
+      <h2>📋 Bilan — Semaine ${n}</h2>
+      <div class="sl">Ressenti général</div>
+      <div class="sgrid" id="wsgrid"></div>
+      <div class="sl" style="margin-top:.65rem">Mes objectifs — Score cette semaine</div>
+      <div class="sgrid" id="osgrid"></div>
+      <div class="sl" style="margin-top:.65rem">📈 Évolution des objectifs</div>
+      <div class="chartwrap" id="ochart"></div>
+      <div class="sl" style="margin-top:.65rem">Synthèse automatique</div>
+      <div class="synthbox"><div class="t">📝 Récapitulatif</div>${synth.length?`<pre style="font-size:.75rem;line-height:1.6;white-space:pre-wrap;color:#1a1a2e;font-family:inherit">${synth.join('\n\n')}</pre>`:'<div style="font-size:.73rem;color:#9ca3af;font-style:italic">Aucune remarque cette semaine.</div>'}</div>
+      ${pi<2?`<div class="sl">Demande de passage de phase</div>
+      <div class="phreq">
+        <div><strong style="font-size:.77rem;display:block">Prêt(e) pour la ${PH[pi+1].l}</strong><small style="font-size:.62rem;color:#9ca3af">Soumis à l'accord de la kiné</small></div>
+        <div class="tgl${wd.ready?' on':''}" id="rdytgl" onclick="togReady(${n})"><div class="tr"></div><div class="th"></div></div>
+      </div>`:''}
+      <div id="kblock"></div>
+    </div>`;
+  bWSScores(n,wd);bOSScores(n,wd,pi);bOChart(pi,'ochart');bKBlock(n,wd,pi);
+}
+
+function bWSScores(n,wd){
+  const g=document.getElementById('wsgrid');if(!g)return;
+  WF.forEach(f=>{
+    const v=wd.scores?.[f]||0,div=document.createElement('div');div.className='sf';
+    div.innerHTML=`<span class="lbl">${WL[f]}</span><div class="dots" id="ws-${f}-${n}"></div><div class="val" id="wv-${f}-${n}" style="color:${scC(v)}">${v?v+'/10':'—'}</div><div class="hints"><span>${WH[f][0]}</span><span>${WH[f][1]}</span></div>`;
+    g.appendChild(div);
+    const c=document.getElementById('ws-'+f+'-'+n);
+    mkDots(c,v,val=>{const w=gW(n);w.scores[f]=val;sW(n,w);rfDots(c,val);const sv=document.getElementById('wv-'+f+'-'+n);if(sv){sv.textContent=val+'/10';sv.style.color=scC(val);}});
+  });
+}
+
+function bOSScores(n,wd,pi){
+  const g=document.getElementById('osgrid');if(!g)return;
+  PO[pi].forEach(id=>{
+    const v=wd.ob?.[id]||0,div=document.createElement('div');div.className='sf';
+    div.innerHTML=`<span class="lbl" style="display:flex;align-items:center;gap:3px"><span style="width:6px;height:6px;border-radius:50%;background:${OC[id]};display:inline-block;flex-shrink:0"></span>${OSH[id]}</span><div class="dots" id="os-${id}-${n}"></div><div class="val" id="ov-${id}-${n}" style="color:${scC(v)}">${v?v+'/10':'—'}</div>`;
+    g.appendChild(div);
+    const c=document.getElementById('os-'+id+'-'+n);
+    mkDots(c,v,val=>{const w=gW(n);if(!w.ob)w.ob={};w.ob[id]=val;sW(n,w);rfDots(c,val);const sv=document.getElementById('ov-'+id+'-'+n);if(sv){sv.textContent=val+'/10';sv.style.color=scC(val);}bOChart(pi,'ochart');},5);
+  });
+}
+
+function togReady(n){
+  const wd=gW(n);wd.ready=!wd.ready;sW(n,wd);
+  const el=document.getElementById('rdytgl');if(el)el.classList.toggle('on',wd.ready);
+  bKBlock(n,wd,PH.indexOf(phOf(n)));
+}
+
+function bKBlock(n,wd,pi){
+  const el=document.getElementById('kblock');if(!el)return;
+  if(wd.kine){
+    const ok=wd.kine.approved;
+    el.innerHTML=`<div class="kinebox ${ok?'approved':'rejected'}">
+      <div class="klbl" style="color:${ok?'#2d6a4f':'#e07a5f'}">${ok?'✅':'❌'} Réponse de la kiné</div>
+      <div style="display:flex;align-items:flex-start;gap:.42rem;font-size:.77rem"><span style="font-size:.97rem">${ok?'✅':'❌'}</span>
+      <div><p style="font-weight:600">${ok?`Passage en ${PH[pi+1]?.l||'phase suivante'} accordé !`:'Passage refusé pour l\'instant.'}</p>
+      ${wd.kine.comment?`<p style="font-size:.7rem;margin-top:3px;color:#9ca3af">"${wd.kine.comment}"</p>`:''}
+      <p style="font-size:.58rem;color:#9ca3af;margin-top:3px">${wd.kine.date}</p></div></div>
+      <button class="btn btn-ghost" style="margin-top:.42rem;font-size:.63rem;padding:.22rem .52rem" onclick="resetKine(${n})">Réinitialiser</button>
+    </div>`;
+  } else if(wd.ready){
+    el.innerHTML=`<div class="kinebox pending">
+      <div class="klbl" style="color:#f59e0b">⏳ Mode Kiné — Donner l'aval</div>
+      <textarea id="kc-${n}" placeholder="Commentaire clinique (optionnel)..." style="height:42px;margin:.4rem 0 .4rem"></textarea>
+      <div class="kbtns">
+        <button class="kapprove" onclick="subKine(${n},true)">✅ Accorder Phase ${pi+2}</button>
+        <button class="kreject"  onclick="subKine(${n},false)">❌ Refuser</button>
+      </div>
+    </div>`;
+  } else { el.innerHTML=''; }
+}
+
+function subKine(n,ok){
+  const c=document.getElementById('kc-'+n)?.value||'';
+  const wd=gW(n);wd.kine={approved:ok,comment:c,date:new Date().toLocaleDateString('fr-BE',{day:'numeric',month:'long',year:'numeric'})};sW(n,wd);
+  bKBlock(n,wd,PH.indexOf(phOf(n)));toast(ok?'✅ Validation enregistrée !':'❌ Refus enregistré');
+}
+function resetKine(n){const wd=gW(n);wd.kine=null;sW(n,wd);bKBlock(n,wd,PH.indexOf(phOf(n)));}
+
+/* ═══ OBJ CHART ═══ */
+function bOChart(pi,cid){
+  const ids=PO[pi];
+  const wkd=[];for(let n=1;n<=52;n++){const wd=gW(n);if(wd.ob&&ids.some(id=>wd.ob[id]>0))wkd.push({n,o:wd.ob});}
+  const el=document.getElementById(cid);if(!el)return;
+  if(!wkd.length){el.innerHTML='<div style="font-size:.71rem;color:#9ca3af;font-style:italic;padding:.28rem 0">Renseigne les scores ci-dessus — le graphique se construira semaine par semaine.</div>';return;}
+  const W=480,H=135,PL=20,PR=6,PT=9,PB=21,cW=W-PL-PR,cH=H-PT-PB,n=wkd.length;
+  const xf=i=>PL+(n===1?cW/2:i/(n-1)*cW),yf=v=>PT+cH-(v/10*cH);
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;overflow:visible" xmlns="http://www.w3.org/2000/svg">`;
+  [0,2,4,6,8,10].forEach(v=>{s+=`<line x1="${PL}" y1="${yf(v)}" x2="${W-PR}" y2="${yf(v)}" stroke="#e8e0d0" stroke-width="${v===0?1.4:.6}"/>`;s+=`<text x="${PL-3}" y="${yf(v)+3.2}" font-size="6.5" fill="#9ca3af" text-anchor="end">${v}</text>`;});
+  s+=`<rect x="${PL}" y="${yf(10)}" width="${cW}" height="${yf(7)-yf(10)}" fill="#2d6a4f" opacity=".05"/>`;
+  s+=`<line x1="${PL}" y1="${yf(7)}" x2="${W-PR}" y2="${yf(7)}" stroke="#2d6a4f" stroke-width="1" stroke-dasharray="4,3" opacity=".35"/>`;
+  s+=`<text x="${W-PR+2}" y="${yf(7)+3.2}" font-size="6.5" fill="#2d6a4f" opacity=".52">Cible</text>`;
+  wkd.forEach((d,i)=>s+=`<text x="${xf(i)}" y="${H-5}" font-size="6.5" fill="#9ca3af" text-anchor="middle">S${d.n}</text>`);
+  ids.forEach(id=>{
+    const col=OC[id],pts=wkd.map((d,i)=>({x:xf(i),y:yf(d.o[id]||0),v:d.o[id]||0})).filter(p=>p.v>0);
+    if(!pts.length)return;
+    if(pts.length>=2){let p=`M${pts[0].x},${pts[0].y}`;for(let i=1;i<pts.length;i++){const cx=(pts[i-1].x+pts[i].x)/2;p+=` C${cx},${pts[i-1].y} ${cx},${pts[i].y} ${pts[i].x},${pts[i].y}`;}s+=`<path d="${p}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" opacity=".88"/>`;s+=`<path d="${p} L${pts[pts.length-1].x},${yf(0)} L${pts[0].x},${yf(0)} Z" fill="${col}" opacity=".06"/>`;}
+    pts.forEach(p=>{s+=`<circle cx="${p.x}" cy="${p.y}" r="3.6" fill="${col}" stroke="#fff" stroke-width="1.3"/>`;s+=`<text x="${p.x}" y="${p.y-7}" font-size="7.5" fill="${col}" text-anchor="middle" font-weight="bold">${p.v}</text>`;});
+  });
+  s+='</svg>';
+  const leg=ids.map(id=>`<span><i style="background:${OC[id]}"></i>${OSH[id]}</span>`).join('');
+  el.innerHTML=s+`<div class="chartleg">${leg}</div>`;
+}
+
+/* ═══ PROTOCOL ═══ */
+function rProt(){
+  const pg=document.getElementById('pg-protocol');
+  const data=[
+    {id:'p1',pi:0,t:'Phase Aiguë',ti:'Min 15j · Max 1 mois post-op',c:'#2d6a4f'},
+    {id:'p2',pi:1,t:'Phase Fonctionnelle',ti:'1 → 3 mois post-op',c:'#457b9d'},
+    {id:'p3',pi:2,t:'Phase Retour au Sport',ti:'3 → 6+ mois post-op',c:'#e07a5f'}
+  ];
+  pg.innerHTML=data.map(({id,pi,t,ti,c})=>`
+    <div class="phblock">
+      <div class="phhead${opPh[id]?' open':''}" style="background:color-mix(in srgb,${c} 8%,white);border-bottom:${opPh[id]?'1px solid #e8e0d0':'none'}" onclick="tgPh('${id}',this)">
+        <div class="phnum" style="background:${c}">${pi+1}</div>
+        <div style="flex:1"><div style="font-size:.98rem;font-weight:700">${t}</div><div style="font-size:.65rem;color:#9ca3af">${ti}</div></div>
+        <div style="color:#9ca3af;transition:transform .3s;${opPh[id]?'transform:rotate(180deg)':''}">▾</div>
+      </div>
+      <div class="phbody${opPh[id]?' open':''}" id="pb-${id}">
+        <div class="sl" style="margin-top:0">Objectifs — Score 1→10 · Coche quand validé</div>
+        <div id="objs-${id}"></div>
+        <div id="ext-${id}"></div>
+      </div>
+    </div>`).join('');
+  data.forEach(({id,pi,c})=>{
+    const ob=document.getElementById('objs-'+id);
+    PO[pi].forEach(oid=>{
+      const v=obS[oid]||0,done=!!obD[oid];
+      const d=document.createElement('div');d.className='obj'+(done?' done':'');d.id='oj-'+oid;
+      d.innerHTML=`<div class="objtop"><div class="ocheck" id="ok-${oid}" onclick="tgObj('${oid}')" style="${done?'background:#2d6a4f;border-color:#2d6a4f;color:#fff':''}">✓</div><div class="olbl">${OLB[oid]}</div><div class="osv" id="osv-${oid}" style="color:${scC(v)}">${v?v+'/10':'—'}</div></div><div class="scorerow"><span class="hint">Difficile</span><div class="sdots" id="sd-${oid}"></div><span class="hint">Maîtrisé</span></div>`;
+      ob.appendChild(d);
+      const c2=document.getElementById('sd-'+oid);
+      mkDots(c2,v,val=>{obS[oid]=val;ss('obS',obS);rfDots(c2,val);const sv=document.getElementById('osv-'+oid);if(sv){sv.textContent=val+'/10';sv.style.color=scC(val);}},7);
+    });
+    const ext=document.getElementById('ext-'+id);
+    if(pi===0)ext.innerHTML=`<div style="margin:.6rem 0;background:#f0ece3;border-radius:6px;padding:.6rem .82rem;display:flex;align-items:center;gap:.7rem;border:1px solid #e8e0d0"><span style="font-size:.63rem;color:#9ca3af;white-space:nowrap">Flexion cible</span><div style="flex:1;height:5px;background:#e0dbd0;border-radius:999px;overflow:hidden"><div style="height:100%;width:77%;background:linear-gradient(90deg,#2d6a4f,#457b9d)"></div></div><span style="font-size:.67rem;font-weight:700;white-space:nowrap">0°→110°</span></div><div class="sl">Modalités</div><div class="tags">${['Mobilisations A/P','Charnière genou','BFR','Cryothérapie','Électrostimulation'].map(t=>`<span class="tag" style="background:color-mix(in srgb,#2d6a4f 12%,white);color:#2d6a4f;border:1px solid color-mix(in srgb,#2d6a4f 25%,white)">${t}</span>`).join('')}</div>`;
+    if(pi===1)ext.innerHTML=`<div class="exgrid"><div class="excard"><div class="t">🦵 Renforcement</div><ul><li>Fentes</li><li>Step</li><li>Squats</li><li>Pont fessier</li></ul></div><div class="excard"><div class="t">⚖ Équilibre</div><ul><li>Gainage</li><li>Unipodal</li><li>Plateau instable</li><li>Crawl · Nage</li></ul></div></div><div class="tags">${['Poids de corps','→ Lest externe','BFR si indiqué'].map(t=>`<span class="tag" style="background:color-mix(in srgb,#457b9d 12%,white);color:#457b9d;border:1px solid color-mix(in srgb,#457b9d 25%,white)">${t}</span>`).join('')}</div>`;
+    if(pi===2)ext.innerHTML=`<div class="exgrid"><div class="excard"><div class="t">💪 Force</div><ul><li>Pliométrie</li><li>Course</li><li>Force ++</li><li>Équilibre ++</li></ul></div><div class="excard"><div class="t">🏃 Agilité</div><ul><li>Changements direction</li><li>Game play</li><li>Accél/décél</li></ul></div></div><div class="tags">${['LSI ≥ 90%','Symétrie quadri/ischio','Validation médicale'].map(t=>`<span class="tag" style="background:color-mix(in srgb,#e07a5f 12%,white);color:#e07a5f;border:1px solid color-mix(in srgb,#e07a5f 25%,white)">${t}</span>`).join('')}</div>`;
+  });
+}
+function tgPh(id,head){
+  opPh[id]=!opPh[id];
+  head.classList.toggle('open',opPh[id]);
+  head.querySelector('div:last-child').style.transform=opPh[id]?'rotate(180deg)':'none';
+  head.style.borderBottom=opPh[id]?'1px solid #e8e0d0':'none';
+  const b=document.getElementById('pb-'+id);if(b)b.classList.toggle('open',opPh[id]);
+}
+function tgObj(oid){
+  obD[oid]=!obD[oid];ss('obD',obD);
+  const el=document.getElementById('oj-'+oid);if(el)el.classList.toggle('done',obD[oid]);
+  const ck=document.getElementById('ok-'+oid);if(ck)ck.style.cssText=obD[oid]?'background:#2d6a4f;border-color:#2d6a4f;color:#fff':'';
+  rHome();toast(obD[oid]?'✅ Objectif validé !':'↩ Objectif réouvert');
+}
+
+/* ═══ JOURNAL ═══ */
+function rJour(){
+  const wks=[];for(let n=1;n<=52;n++){const wd=gW(n);if(WF.some(f=>wd.scores?.[f]>0))wks.push({n,wd,ph:phOf(n)});}
+  const pg=document.getElementById('pg-journal');
+  if(!wks.length){pg.innerHTML=`<div style="text-align:center;padding:2.5rem 1rem"><div style="font-size:2rem;margin-bottom:.5rem">📊</div><p style="font-size:.8rem;color:#9ca3af;margin-bottom:1rem;line-height:1.6">Les bilans apparaîtront après chaque récapitulatif du dimanche.</p><button class="btn btn-dark" onclick="go('planning')">→ Planning</button></div>`;return;}
+  let h='';
+  PH.forEach((p,pi)=>{const ids=PO[pi],has=Array.from({length:52},(_,i)=>gW(i+1)).some(wd=>wd.ob&&ids.some(id=>wd.ob[id]>0));if(has)h+=`<div class="jcard"><h3>📈 Évolution — <span style="color:${p.c}">${p.l}</span></h3><div id="jch-${pi}"></div></div>`;});
+  if(wks.length)h+=`<div class="jcard"><h3>Ressenti général</h3><div class="barchart" id="bc"></div><div class="chartleg">${WF.map(f=>`<span><i style="background:${WCS[f]}"></i>${WL[f].replace(/[^\w\s]/g,'').trim()}</span>`).join('')}</div></div>`;
+  h+=wks.slice().reverse().map(({n,wd,ph})=>{
+    const a=wAvg(wd);
+    const bars=WF.map(f=>{const v=wd.scores?.[f]||0;return`<div class="ms"><div class="lbl">${WL[f]}</div><div class="brow"><div class="trk"><div class="fill" style="width:${v*10}%;background:${scC(v)}"></div></div><div class="val" style="color:${scC(v)}">${v?v+'/10':'—'}</div></div></div>`;}).join('');
+    const ks=wd.kine?(wd.kine.approved?'✅ Validé par la kiné':'❌ Refusé'):(wd.ready?'⏳ En attente':'');
+    return`<div class="wkcard"><div class="wkhead" onclick="this.nextElementSibling.classList.toggle('open')"><div style="font-weight:600;font-size:.82rem">Semaine ${n} · ${ph.s}</div>${a?`<span class="avgpill" style="background:${scC(parseFloat(a))}">${a}/10</span>`:''}</div><div class="wkbody"><div class="msgrid">${bars}</div>${ks?`<div style="font-size:.68rem;font-weight:500;margin-bottom:.5rem">${ks}</div>`:''}<button class="btn btn-ghost" style="font-size:.64rem;padding:.24rem .6rem" onclick="wkO=Math.round((${aD(W1,(n-1)*7).getTime()}-cws().getTime())/604800000);go('planning')">→ Planning S${n}</button></div></div>`;
+  }).join('');
+  pg.innerHTML=h;
+  PH.forEach((_,pi)=>{const e=document.getElementById('jch-'+pi);if(e)bOChart(pi,'jch-'+pi);});
+  const bc=document.getElementById('bc');if(bc){bc.innerHTML='';wks.slice(-10).forEach(({n,wd})=>{const g=document.createElement('div');g.className='bgrp';const inn=document.createElement('div');inn.className='binner';WF.forEach(f=>{const v=wd.scores?.[f]||0;const b=document.createElement('div');b.className='bar';b.style.height=(v/10*75)+'px';b.style.background=WCS[f];b.style.opacity=v?1:.08;b.title=WL[f]+':'+(v?v+'/10':'—');inn.appendChild(b);});const l=document.createElement('div');l.className='blbl';l.textContent='S'+n;g.appendChild(inn);g.appendChild(l);bc.appendChild(g);});}
+}
+
+/* ═══ KINE ═══ */
+function rKine(){
+  const cfg=ls('fbCfg',null);
+  const pf=PID.slice(0,4)+'-'+PID.slice(4,8)+'-'+PID.slice(8,12)+'-'+PID.slice(12,16);
+  const stCol=fbSt==='on'?'#2d6a4f':fbSt==='...'?'#457b9d':'#9ca3af';
+  const stBg=fbSt==='on'?'color-mix(in srgb,#2d6a4f 10%,white)':fbSt==='...'?'color-mix(in srgb,#457b9d 10%,white)':'#f9f7f2';
+  const stMsg=fbSt==='on'?'✅ Synchronisé · Ta kiné peut voir tes données':fbSt==='...'?'🔄 Connexion...':'⚠️ Non connecté — configure Firebase ci-dessous';
+  document.getElementById('pg-kine').innerHTML=`
+    <div class="shero">
+      <div style="font-size:.56rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.33rem">Partage en temps réel</div>
+      <div style="font-size:1.08rem;font-weight:700;color:#fff;margin-bottom:.13rem">🔗 Lien pour ta kiné</div>
+      <div style="font-size:.67rem;color:rgba(255,255,255,.62)">Ta kiné voit tes données en direct et peut valider les phases</div>
+    </div>
+    <div class="syncbar" style="background:${stBg};border:1px solid ${stBg};color:${stCol}">
+      <div class="dot" style="background:${stCol}"></div>${stMsg}
+    </div>
+    <div class="codebox">
+      <div class="sl" style="margin-top:0">Ton code patient</div>
+      <div class="codeval">${pf}</div>
+      <button class="btn btn-purple" style="width:100%" onclick="copyLink()">📋 Copier le lien WhatsApp</button>
+      <p style="font-size:.62rem;color:#9ca3af;margin-top:.5rem;line-height:1.5">Envoie ce lien à ta kiné. Elle l'ouvre sur son téléphone et voit tout en direct.</p>
+    </div>
+    ${cfg?`
+    <div class="fbbox" style="background:color-mix(in srgb,#2d6a4f 6%,white);border-color:color-mix(in srgb,#2d6a4f 20%,white)">
+      <h3 style="color:#2d6a4f">✅ Firebase connecté</h3>
+      <p style="font-size:.72rem;color:#9ca3af;margin-bottom:.58rem">Projet : <strong>${cfg.projectId}</strong></p>
+      <button class="btn btn-red" onclick="dcFb()">Déconnecter</button>
+    </div>`:`
+    <div class="fbbox">
+      <h3>⚙️ Connexion Firebase (une seule fois)</h3>
+      <ol class="steps">
+        <li><div class="stepn">1</div>Va sur <strong>console.firebase.google.com</strong> → crée un projet gratuit</li>
+        <li><div class="stepn">2</div>Dans le projet → <strong>Firestore Database</strong> → Créer → <strong>Mode test</strong></li>
+        <li><div class="stepn">3</div>⚙️ Paramètres → Tes applis → icône Web → sélectionne <strong>Configuration</strong> → copie tout ce qui est entre <strong>{ }</strong></li>
+        <li><div class="stepn">4</div>Colle ci-dessous et appuie sur Connecter</li>
+      </ol>
+      <textarea class="fbcfg" id="fbin" placeholder='"apiKey": "AIza...",&#10;"authDomain": "kine-lca-ms...",&#10;"projectId": "kine-lca-ms",&#10;"storageBucket": "...",&#10;"messagingSenderId": "119033314854",&#10;"appId": "..."'></textarea>
+      <button class="btn btn-purple" style="width:100%" onclick="cnFb()">🔌 Connecter Firebase</button>
+    </div>`}
+    <div class="fbbox" style="background:color-mix(in srgb,#7c3aed 5%,white);border-color:color-mix(in srgb,#7c3aed 17%,white)">
+      <h3 style="color:#7c3aed">📱 Instructions pour ta kiné</h3>
+      <ol class="steps">${['Tu lui envoies le lien par WhatsApp','Elle ouvre le lien dans Chrome ou Safari','Elle entre la même config Firebase une seule fois','Elle voit ton tableau de bord et peut valider les phases instantanément'].map((s,i)=>`<li><div class="stepn" style="background:#7c3aed">${i+1}</div>${s}</li>`).join('')}</ol>
+    </div>`;
+}
+
+function copyLink(){
+  const url=window.location.href.split('?')[0]+'?kine='+PID;
+  const msg='🦵 Revalidation LCA\n\nBonjour,\nVoici mon lien de suivi en temps réel :\n'+url+'\n\nTu pourras voir mon évolution et valider les passages de phase.';
+  navigator.clipboard.writeText(msg).then(()=>toast('📋 Lien copié — colle dans WhatsApp !'),()=>toast('Copie le lien manuellement'));
+}
+
+async function cnFb(){
+  const raw=(document.getElementById('fbin')?.value||'').trim();
+  if(!raw){toast('⚠️ Colle ta config Firebase');return;}
+  // Parse: accept with or without outer braces, with or without quoted keys
+  let cfg;
+  try{
+    // Wrap in braces if needed
+    const block=raw.includes('{')?raw.slice(raw.indexOf('{'),raw.lastIndexOf('}')+1):'{'+raw+'}';
+    // Try JSON first
+    try{ cfg=JSON.parse(block); }
+    catch{
+      // Convert JS object notation to JSON (add quotes to unquoted keys)
+      const fixed=block
+        .replace(/\/\/[^\n]*/g,'')
+        .replace(/,(\s*[}\]])/g,'$1')
+        .replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*:)/g,'$1"$2"$3');
+      cfg=JSON.parse(fixed);
+    }
+  }catch{toast('❌ Format non reconnu — colle uniquement le contenu entre { }');return;}
+  if(!cfg.projectId||!cfg.apiKey){toast('❌ Config incomplète (projectId ou apiKey manquant)');return;}
+  toast('🔌 Connexion...');fbSt='...';
+  try{
+    const{initializeApp,getApps,getApp}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const{getFirestore,doc,setDoc,onSnapshot}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const app=getApps().length?getApp():initializeApp(cfg);
+    fbDb=getFirestore(app);
+    const ref=doc(fbDb,'patients',PID);
+    onSnapshot(ref,snap=>{
+      if(!snap.exists())return;
+      const d=snap.data();if(!d.weeks)return;
+      Object.entries(d.weeks).forEach(([n,wd])=>{
+        if(!wd.kine)return;
+        const loc=gW(parseInt(n));
+        if(JSON.stringify(wd.kine)!==JSON.stringify(loc.kine)){
+          loc.kine=wd.kine;sW(parseInt(n),loc);
+          toast('🔔 Ta kiné a répondu — Semaine '+n+' !');
+          if(page==='planning')rPlan();
+        }
+      });
+      fbSt='on';
+    },()=>{fbSt='off';});
+    await setDoc(ref,{pid:PID,lastSync:new Date().toISOString()},{merge:true});
+    ss('fbCfg',cfg);fbSt='on';rKine();toast('✅ Firebase connecté !');
+  }catch(e){fbSt='off';toast('❌ Erreur Firebase : '+e.message);}
+}
+function dcFb(){fbDb=null;localStorage.removeItem(K+'fbCfg');fbSt='off';rKine();toast('🔌 Déconnecté');}
+
+/* ═══ AUTO-RECONNECT FIREBASE ═══ */
+const savedFbCfg=ls('fbCfg',null);
+if(savedFbCfg){
+  (async()=>{
+    try{
+      const{initializeApp,getApps,getApp}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const{getFirestore,doc,setDoc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const app=getApps().length?getApp():initializeApp(savedFbCfg);
+      fbDb=getFirestore(app);fbSt='on';
+    }catch{fbSt='off';}
+  })();
+}
+
+/* ═══ INIT ═══ */
+rHome();
+rProt();
+upTop();
+</script>
+</body>
+</html>
